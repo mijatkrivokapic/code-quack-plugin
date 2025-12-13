@@ -8,6 +8,7 @@ import com.intellij.util.ui.UIUtil;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 
 public class DuckPanel extends JPanel {
 
@@ -49,17 +50,33 @@ public class DuckPanel extends JPanel {
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Input panel
+        // Input panel with clear separation
+        JPanel inputContainer = new JPanel(new BorderLayout());
+        inputContainer.setBackground(UIUtil.getPanelBackground());
+        inputContainer.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, new JBColor(new Color(0xC4C4C4), new Color(0x323232))),
+                JBUI.Borders.empty(12)
+        ));
+
         JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.setBackground(UIUtil.getPanelBackground());
-        inputPanel.setBorder(JBUI.Borders.empty(8));
+        inputPanel.setBackground(UIUtil.getTextFieldBackground());
+        inputPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new JBColor(new Color(0xC4C4C4), new Color(0x646464)), 1, true),
+                JBUI.Borders.empty(8, 10)
+        ));
 
         inputField = new JTextField();
-        inputField.putClientProperty("JTextField.placeholderText", "Ask the duck...");
-        inputField.setBorder(JBUI.Borders.empty(8));
+        inputField.putClientProperty("JTextField.placeholderText", "Describe your problem or ask a question...");
+        inputField.setBorder(null);
+        inputField.setBackground(UIUtil.getTextFieldBackground());
+        inputField.setForeground(UIUtil.getTextFieldForeground());
+        inputField.setCaretColor(UIUtil.getTextFieldForeground());
+        inputField.setFont(UIUtil.getLabelFont());
 
         inputPanel.add(inputField, BorderLayout.CENTER);
-        add(inputPanel, BorderLayout.SOUTH);
+        inputContainer.add(inputPanel, BorderLayout.CENTER);
+
+        add(inputContainer, BorderLayout.SOUTH);
 
         // Action on ENTER
         inputField.addActionListener(e -> {
@@ -97,7 +114,7 @@ public class DuckPanel extends JPanel {
             messagePanel.add(Box.createHorizontalGlue());
         }
 
-        JPanel bubble = createMessageBubble(text, isUser);
+        RoundedBubblePanel bubble = createMessageBubble(text, isUser);
         messagePanel.add(bubble);
 
         if (!isUser) {
@@ -109,10 +126,7 @@ public class DuckPanel extends JPanel {
         scrollToBottom();
     }
 
-    private JPanel createMessageBubble(String text, boolean isUser) {
-        JPanel bubble = new JPanel(new BorderLayout());
-        bubble.setMaximumSize(new Dimension(400, Integer.MAX_VALUE));
-
+    private RoundedBubblePanel createMessageBubble(String text, boolean isUser) {
         Color bgColor = isUser
                 ? new JBColor(new Color(0x2B7DE1), new Color(0x3574C9))
                 : new JBColor(new Color(0xEBECF0), new Color(0x3C3F41));
@@ -121,8 +135,12 @@ public class DuckPanel extends JPanel {
                 ? new JBColor(Color.WHITE, Color.WHITE)
                 : UIUtil.getLabelForeground();
 
-        bubble.setBackground(bgColor);
-        bubble.setBorder(JBUI.Borders.empty(8, 12));
+        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16);
+        bubble.setLayout(new BorderLayout());
+
+        int horizontalPadding = 14;
+        int verticalPadding = 10;
+        bubble.setBorder(JBUI.Borders.empty(verticalPadding, horizontalPadding));
 
         JTextArea textArea = new JTextArea(text);
         textArea.setEditable(false);
@@ -133,18 +151,35 @@ public class DuckPanel extends JPanel {
         textArea.setFont(UIUtil.getLabelFont());
         textArea.setBorder(null);
 
+        // Set a maximum width for text wrapping
+        int maxTextWidth = 350;
+        textArea.setSize(new Dimension(maxTextWidth, Integer.MAX_VALUE));
+        Dimension textPreferredSize = textArea.getPreferredSize();
+
+        // Set the text area size
+        textArea.setPreferredSize(new Dimension(
+                Math.min(maxTextWidth, textPreferredSize.width),
+                textPreferredSize.height
+        ));
+
         bubble.add(textArea, BorderLayout.CENTER);
+
+        // Set bubble size including padding
+        int bubbleWidth = textArea.getPreferredSize().width + (horizontalPadding * 2);
+        int bubbleHeight = textArea.getPreferredSize().height + (verticalPadding * 2);
+        bubble.setPreferredSize(new Dimension(bubbleWidth, bubbleHeight));
+        bubble.setMaximumSize(new Dimension(bubbleWidth, bubbleHeight));
+
         return bubble;
     }
-
     private JPanel createTypingIndicator() {
         JPanel indicator = new JPanel(new FlowLayout(FlowLayout.LEFT));
         indicator.setBackground(UIUtil.getPanelBackground());
         indicator.setBorder(JBUI.Borders.empty(4, 0));
 
-        JPanel bubble = new JPanel();
-        bubble.setBackground(new JBColor(new Color(0xEBECF0), new Color(0x3C3F41)));
-        bubble.setBorder(JBUI.Borders.empty(8, 12));
+        Color bgColor = new JBColor(new Color(0xEBECF0), new Color(0x3C3F41));
+        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16);
+        bubble.setBorder(JBUI.Borders.empty(10, 14));
 
         JLabel label = new JLabel("Duck is thinking...");
         label.setForeground(UIUtil.getLabelForeground());
@@ -159,5 +194,30 @@ public class DuckPanel extends JPanel {
             JScrollBar vertical = scrollPane.getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
+    }
+
+    // Custom panel with rounded corners
+    private static class RoundedBubblePanel extends JPanel {
+        private Color backgroundColor;
+        private int cornerRadius;
+
+        public RoundedBubblePanel(Color bgColor, int radius) {
+            super();
+            this.backgroundColor = bgColor;
+            this.cornerRadius = radius;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setColor(backgroundColor);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }
