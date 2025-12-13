@@ -1,6 +1,6 @@
 package com.example.backend.dto;
 
-public class CreateQuestionDTO {
+public class CreateMessageDTO {
     private String codeContext;
     private String userProblem;
 
