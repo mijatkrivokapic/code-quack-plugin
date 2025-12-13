@@ -1,15 +1,22 @@
 <idea-plugin>
     <id>org.example.CodeQuack</id>
     <name>Rubber Duck Debugger</name>
-    <vendor>TvojTim</vendor>
+    <vendor>MNM</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="RubberDuck"
+        <toolWindow id="CodeQuack"
                     secondary="true"
-                    icon="AllIcons.General.ContextHelp"
+                    icon="org.example.CodeQuackIcons.PLUGIN_ICON"
                     anchor="right"
                     factoryClass="org.example.CodeQuackWindowFactory"/>
+
+        <notificationGroup
+                id="CodeQuack Notifications"
+                displayType="BALLOON"
+                isLogByDefault="false"/>
+        <postStartupActivity implementation="org.example.CodeQuackActivity"/>
     </extensions>
 </idea-plugin>
