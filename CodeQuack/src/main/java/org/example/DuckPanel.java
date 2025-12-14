@@ -25,7 +25,7 @@ public class DuckPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(UIUtil.getPanelBackground());
 
-        duckIcon = IconLoader.getIcon("/META-INF/duck.svg", DuckPanel.class);
+        duckIcon = IconLoader.getIcon("/META-INF/duck.png", DuckPanel.class);
 
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setBackground(UIUtil.getPanelBackground());
