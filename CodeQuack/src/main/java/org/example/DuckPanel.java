@@ -26,6 +26,7 @@ public class DuckPanel extends JPanel {
         setBackground(UIUtil.getPanelBackground());
 
         duckIcon = IconLoader.getIcon("/META-INF/duck.png", DuckPanel.class);
+        Icon sendIcon = IconLoader.getIcon("/META-INF/boat_dark.svg", DuckPanel.class);
 
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setBackground(UIUtil.getPanelBackground());
@@ -56,7 +57,7 @@ public class DuckPanel extends JPanel {
         inputContainer.setBackground(UIUtil.getPanelBackground());
         inputContainer.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, new JBColor(new Color(0xC4C4C4), new Color(0x323232))),
-                JBUI.Borders.empty(12)
+                JBUI.Borders.empty(12, 12, 12, 8)
         ));
 
         JPanel inputPanel = new JPanel(new BorderLayout());
@@ -66,7 +67,7 @@ public class DuckPanel extends JPanel {
                 JBUI.Borders.empty(8, 10)
         ));
 
-        inputField = new ExpandableTextArea(CodeQuackBundle.message("area.placeholder"), 12, 12, 1);
+        inputField = new ExpandableTextArea("Type here...", 12, 12, 1);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);
         inputField.setBorder(null);
@@ -79,30 +80,29 @@ public class DuckPanel extends JPanel {
 
         inputField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void insertUpdate(DocumentEvent e) {
-                sizeManager.updateSize();
-            }
-
+            public void insertUpdate(DocumentEvent e) { sizeManager.updateSize(); }
             @Override
-            public void removeUpdate(DocumentEvent e) {
-                sizeManager.updateSize();
-            }
-
+            public void removeUpdate(DocumentEvent e) { sizeManager.updateSize(); }
             @Override
-            public void changedUpdate(DocumentEvent e) {
-                sizeManager.updateSize();
-            }
+            public void changedUpdate(DocumentEvent e) { sizeManager.updateSize(); }
         });
 
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputContainer.add(inputPanel, BorderLayout.CENTER);
 
-        add(inputContainer, BorderLayout.SOUTH);
-        inputField.addActionListener(e -> sendMessage());
+        JButton sendButton = new JButton(sendIcon);
+        sendButton.setContentAreaFilled(false);
+        sendButton.setBorderPainted(false);
+        sendButton.setFocusPainted(false);
+        sendButton.setBorder(JBUI.Borders.empty(4));
+        sendButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage());
         inputContainer.add(sendButton, BorderLayout.EAST);
+
+        add(inputContainer, BorderLayout.SOUTH);
+
+        inputField.addActionListener(e -> sendMessage());
     }
 
     private void sendMessage() {
@@ -139,7 +139,6 @@ public class DuckPanel extends JPanel {
             JPanel rightPanel = new JPanel(new BorderLayout());
             rightPanel.setBackground(UIUtil.getPanelBackground());
             rightPanel.add(bubble, BorderLayout.EAST);
-
             messageContainer.add(rightPanel, BorderLayout.CENTER);
         } else {
             JPanel leftPanel = new JPanel(new BorderLayout());
@@ -154,6 +153,7 @@ public class DuckPanel extends JPanel {
 
         chatPanel.add(messageContainer);
         chatPanel.revalidate();
+        chatPanel.repaint();
         scrollToBottom();
     }
 
@@ -166,13 +166,6 @@ public class DuckPanel extends JPanel {
                 ? new JBColor(Color.WHITE, Color.WHITE)
                 : UIUtil.getLabelForeground();
 
-        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16);
-        bubble.setLayout(new BorderLayout());
-
-        int horizontalPadding = 14;
-        int verticalPadding = 10;
-        bubble.setBorder(JBUI.Borders.empty(verticalPadding, horizontalPadding));
-
         JTextArea textArea = new JTextArea(text);
         textArea.setEditable(false);
         textArea.setLineWrap(true);
@@ -181,22 +174,10 @@ public class DuckPanel extends JPanel {
         textArea.setForeground(textColor);
         textArea.setFont(UIUtil.getLabelFont());
         textArea.setBorder(null);
+        textArea.setColumns(0);
 
-        int maxTextWidth = 350;
-        textArea.setSize(new Dimension(maxTextWidth, Integer.MAX_VALUE));
-        Dimension textPreferredSize = textArea.getPreferredSize();
-
-        textArea.setPreferredSize(new Dimension(
-                Math.min(maxTextWidth, textPreferredSize.width),
-                textPreferredSize.height
-        ));
-
-        bubble.add(textArea, BorderLayout.CENTER);
-
-        int bubbleWidth = textArea.getPreferredSize().width + (horizontalPadding * 2);
-        int bubbleHeight = textArea.getPreferredSize().height + (verticalPadding * 2);
-        bubble.setPreferredSize(new Dimension(bubbleWidth, bubbleHeight));
-        bubble.setMaximumSize(new Dimension(bubbleWidth, bubbleHeight));
+        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16, textArea);
+        bubble.setBorder(JBUI.Borders.empty(10, 14));
 
         return bubble;
     }
@@ -209,13 +190,18 @@ public class DuckPanel extends JPanel {
         JLabel avatarLabel = new JLabel(duckIcon);
         avatarLabel.setVerticalAlignment(SwingConstants.TOP);
 
-        Color bgColor = new JBColor(new Color(0xEBECF0), new Color(0x3C3F41));
-        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16);
-        bubble.setBorder(JBUI.Borders.empty(10, 14));
+        JTextArea textArea = new JTextArea("Duck is thinking...");
+        textArea.setEditable(false);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setOpaque(false);
+        textArea.setForeground(UIUtil.getLabelForeground());
+        textArea.setFont(UIUtil.getLabelFont());
+        textArea.setBorder(null);
 
-        JLabel label = new JLabel("Duck is thinking...");
-        label.setForeground(UIUtil.getLabelForeground());
-        bubble.add(label);
+        Color bgColor = new JBColor(new Color(0xEBECF0), new Color(0x3C3F41));
+        RoundedBubblePanel bubble = new RoundedBubblePanel(bgColor, 16, textArea);
+        bubble.setBorder(JBUI.Borders.empty(10, 14));
 
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBackground(UIUtil.getPanelBackground());
@@ -237,12 +223,45 @@ public class DuckPanel extends JPanel {
     private static class RoundedBubblePanel extends JPanel {
         private final Color backgroundColor;
         private final int cornerRadius;
+        private final JTextArea textArea;
 
-        public RoundedBubblePanel(Color bgColor, int radius) {
-            super();
+        public RoundedBubblePanel(Color bgColor, int radius, JTextArea textArea) {
+            super(new BorderLayout());
             this.backgroundColor = bgColor;
             this.cornerRadius = radius;
+            this.textArea = textArea;
             setOpaque(false);
+            add(textArea, BorderLayout.CENTER);
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension dim = super.getPreferredSize();
+            Container parent = getParent();
+
+            if (parent == null) {
+                return dim;
+            }
+
+            int availableWidth = parent.getWidth();
+            if (availableWidth <= 0) availableWidth = 300;
+
+            int maxBubbleWidth = (int) (availableWidth * 0.85);
+            if (maxBubbleWidth < 100) maxBubbleWidth = 200;
+
+            Insets insets = getInsets();
+            int contentWidthAvailable = maxBubbleWidth - insets.left - insets.right;
+
+            textArea.setSize(contentWidthAvailable, Short.MAX_VALUE);
+
+            Dimension textPrefSize = textArea.getPreferredSize();
+
+            int finalContentWidth = Math.min(contentWidthAvailable, textPrefSize.width);
+
+            return new Dimension(
+                    finalContentWidth + insets.left + insets.right,
+                    textPrefSize.height + insets.top + insets.bottom
+            );
         }
 
         @Override

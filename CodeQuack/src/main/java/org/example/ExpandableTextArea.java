@@ -16,8 +16,6 @@ import javax.swing.border.Border;
 public class ExpandableTextArea extends JBTextArea {
 
     private final String placeholder;
-    private final int leftPadding;
-    private final int topPadding;
     private final List<ActionListener> actionListeners = new ArrayList<>();
     private final int minRows;
     private final int rowHeight;
@@ -28,8 +26,6 @@ public class ExpandableTextArea extends JBTextArea {
     public ExpandableTextArea(String placeholder, int leftPadding, int topPadding, int minRows) {
         super(minRows, 0);
         this.placeholder = placeholder;
-        this.leftPadding = leftPadding;
-        this.topPadding = topPadding;
         this.minRows = minRows;
         this.rowHeight = getFontMetrics(getFont()).getHeight();
 
@@ -83,18 +79,25 @@ public class ExpandableTextArea extends JBTextArea {
     @Override
     protected void paintComponent(final Graphics pG) {
         super.paintComponent(pG);
-        String placeholder = this.placeholder;
 
         if (placeholder == null || placeholder.isEmpty() || !this.getText().isEmpty()) {
             return;
         }
+
         final Graphics2D g = (Graphics2D) pG;
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setColor(JBColor.GRAY);
-        g.drawString(
-                placeholder,
-                JBUI.scale(this.leftPadding),
-                pG.getFontMetrics().getMaxAscent() + JBUI.scale(this.topPadding));
+
+        g.setColor(com.intellij.util.ui.UIUtil.getInactiveTextColor());
+
+        g.setFont(getFont());
+
+        Insets insets = getInsets();
+        FontMetrics fm = g.getFontMetrics();
+
+        int x = insets.left;
+        int y = insets.top + fm.getAscent();
+
+        g.drawString(placeholder, x, y);
     }
 
     private void setupKeyBindings(ExpandableTextArea textArea) {
