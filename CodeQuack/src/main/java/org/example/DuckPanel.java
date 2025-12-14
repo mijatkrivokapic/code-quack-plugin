@@ -2,34 +2,31 @@ package org.example;
 
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 
 public class DuckPanel extends JPanel {
 
-    private JPanel chatPanel;
-    private JScrollPane scrollPane;
-    private JTextField inputField;
-    private DuckService duckService;
-    private Icon duckIcon;
-    private Icon userIcon;
+    private final JPanel chatPanel;
+    private final JScrollPane scrollPane;
+    private final ExpandableTextArea inputField;
+    private final TextAreaSizeManager sizeManager;
+    private final DuckService duckService;
+    private final Icon duckIcon;
 
     public DuckPanel() {
         this.duckService = new DuckService();
         setLayout(new BorderLayout());
         setBackground(UIUtil.getPanelBackground());
 
-        // Load icons
         duckIcon = IconLoader.getIcon("/META-INF/duck.svg", DuckPanel.class);
-        // You can use a default user icon or load a custom one
-        userIcon = UIManager.getIcon("OptionPane.questionIcon"); // Placeholder, replace with your icon
 
-        // Header with duck icon
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setBackground(UIUtil.getPanelBackground());
         headerPanel.setBorder(JBUI.Borders.empty(8));
@@ -44,19 +41,17 @@ public class DuckPanel extends JPanel {
 
         add(headerPanel, BorderLayout.NORTH);
 
-        // Chat area with messages
         chatPanel = new JPanel();
         chatPanel.setLayout(new BoxLayout(chatPanel, BoxLayout.Y_AXIS));
         chatPanel.setBackground(UIUtil.getPanelBackground());
         chatPanel.setBorder(JBUI.Borders.empty(10));
 
-        scrollPane = new JScrollPane(chatPanel);
+        scrollPane = new JBScrollPane(chatPanel);
         scrollPane.setBorder(null);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Input panel with clear separation
         JPanel inputContainer = new JPanel(new BorderLayout());
         inputContainer.setBackground(UIUtil.getPanelBackground());
         inputContainer.setBorder(BorderFactory.createCompoundBorder(
@@ -71,43 +66,66 @@ public class DuckPanel extends JPanel {
                 JBUI.Borders.empty(8, 10)
         ));
 
-        inputField = new JTextField();
-        inputField.putClientProperty("JTextField.placeholderText", "Describe your problem or ask a question...");
+        inputField = new ExpandableTextArea(CodeQuackBundle.message("area.placeholder"), 12, 12, 2);
+        inputField.setLineWrap(true);
+        inputField.setWrapStyleWord(true);
         inputField.setBorder(null);
         inputField.setBackground(UIUtil.getTextFieldBackground());
         inputField.setForeground(UIUtil.getTextFieldForeground());
         inputField.setCaretColor(UIUtil.getTextFieldForeground());
         inputField.setFont(UIUtil.getLabelFont());
 
+        sizeManager = new TextAreaSizeManager(inputField);
+
+        inputField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                sizeManager.updateSize();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                sizeManager.updateSize();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                sizeManager.updateSize();
+            }
+        });
+
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputContainer.add(inputPanel, BorderLayout.CENTER);
 
         add(inputContainer, BorderLayout.SOUTH);
+        inputField.addActionListener(e -> sendMessage());
 
-        // Action on ENTER
-        inputField.addActionListener(e -> {
-            String userText = inputField.getText();
-            if (userText.trim().isEmpty()) return;
+        JButton sendButton = new JButton("Send");
+        sendButton.addActionListener(e -> sendMessage());
+        inputContainer.add(sendButton, BorderLayout.EAST);
+    }
 
-            addMessage(userText, true);
-            inputField.setText("");
+    private void sendMessage() {
+        String userText = inputField.getText();
+        if (userText.trim().isEmpty()) return;
 
-            // Show typing indicator
-            JPanel typingIndicator = createTypingIndicator();
-            chatPanel.add(typingIndicator);
-            chatPanel.revalidate();
-            scrollToBottom();
+        addMessage(userText, true);
+        inputField.setText("");
+        sizeManager.updateSize();
 
-            // Call service in background thread
-            new Thread(() -> {
-                String response = duckService.askTheDuck(userText);
+        JPanel typingIndicator = createTypingIndicator();
+        chatPanel.add(typingIndicator);
+        chatPanel.revalidate();
+        scrollToBottom();
 
-                SwingUtilities.invokeLater(() -> {
-                    chatPanel.remove(typingIndicator);
-                    addMessage(response, false);
-                });
-            }).start();
-        });
+        new Thread(() -> {
+            String response = duckService.askTheDuck(userText);
+
+            SwingUtilities.invokeLater(() -> {
+                chatPanel.remove(typingIndicator);
+                addMessage(response, false);
+            });
+        }).start();
     }
 
     private void addMessage(String text, boolean isUser) {
@@ -115,26 +133,21 @@ public class DuckPanel extends JPanel {
         messageContainer.setBackground(UIUtil.getPanelBackground());
         messageContainer.setBorder(JBUI.Borders.empty(4, 8));
 
-        // Profile icon
-        JLabel avatarLabel = new JLabel(isUser ? userIcon : duckIcon);
-        avatarLabel.setVerticalAlignment(SwingConstants.TOP);
-
-        // Message bubble
         RoundedBubblePanel bubble = createMessageBubble(text, isUser);
 
-        // Add components based on sender
         if (isUser) {
             JPanel rightPanel = new JPanel(new BorderLayout());
             rightPanel.setBackground(UIUtil.getPanelBackground());
             rightPanel.add(bubble, BorderLayout.EAST);
 
             messageContainer.add(rightPanel, BorderLayout.CENTER);
-            messageContainer.add(avatarLabel, BorderLayout.EAST);
         } else {
             JPanel leftPanel = new JPanel(new BorderLayout());
             leftPanel.setBackground(UIUtil.getPanelBackground());
             leftPanel.add(bubble, BorderLayout.WEST);
 
+            JLabel avatarLabel = new JLabel(duckIcon);
+            avatarLabel.setVerticalAlignment(SwingConstants.TOP);
             messageContainer.add(avatarLabel, BorderLayout.WEST);
             messageContainer.add(leftPanel, BorderLayout.CENTER);
         }
@@ -169,12 +182,10 @@ public class DuckPanel extends JPanel {
         textArea.setFont(UIUtil.getLabelFont());
         textArea.setBorder(null);
 
-        // Set a maximum width for text wrapping
         int maxTextWidth = 350;
         textArea.setSize(new Dimension(maxTextWidth, Integer.MAX_VALUE));
         Dimension textPreferredSize = textArea.getPreferredSize();
 
-        // Set the text area size
         textArea.setPreferredSize(new Dimension(
                 Math.min(maxTextWidth, textPreferredSize.width),
                 textPreferredSize.height
@@ -182,7 +193,6 @@ public class DuckPanel extends JPanel {
 
         bubble.add(textArea, BorderLayout.CENTER);
 
-        // Set bubble size including padding
         int bubbleWidth = textArea.getPreferredSize().width + (horizontalPadding * 2);
         int bubbleHeight = textArea.getPreferredSize().height + (verticalPadding * 2);
         bubble.setPreferredSize(new Dimension(bubbleWidth, bubbleHeight));
@@ -224,10 +234,9 @@ public class DuckPanel extends JPanel {
         });
     }
 
-    // Custom panel with rounded corners
     private static class RoundedBubblePanel extends JPanel {
-        private Color backgroundColor;
-        private int cornerRadius;
+        private final Color backgroundColor;
+        private final int cornerRadius;
 
         public RoundedBubblePanel(Color bgColor, int radius) {
             super();
