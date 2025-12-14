@@ -1,5 +1,8 @@
 package org.example;
 
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBUI;
@@ -9,8 +12,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
+import com.intellij.openapi.project.Project;
 
 public class DuckPanel extends JPanel {
+    private Project project;
 
     private JPanel chatPanel;
     private JScrollPane scrollPane;
@@ -19,7 +24,8 @@ public class DuckPanel extends JPanel {
     private Icon duckIcon;
     private Icon userIcon;
 
-    public DuckPanel() {
+    public DuckPanel(Project project) {
+        this.project = project;
         this.duckService = new DuckService();
         setLayout(new BorderLayout());
         setBackground(UIUtil.getPanelBackground());
@@ -98,7 +104,7 @@ public class DuckPanel extends JPanel {
             chatPanel.revalidate();
             scrollToBottom();
 
-            duckService.askTheDuck("", userText)
+            duckService.askTheDuck(getSelectedCodeFromEditor(), userText)
                     .thenAccept(response -> {
                         SwingUtilities.invokeLater(() -> {
                             chatPanel.remove(typingIndicator);
@@ -254,6 +260,26 @@ public class DuckPanel extends JPanel {
 
             g2.dispose();
             super.paintComponent(g);
+        }
+    }
+
+    private String getSelectedCodeFromEditor() {
+        FileEditorManager editorManager = FileEditorManager.getInstance(project);
+
+        Editor editor = editorManager.getSelectedTextEditor();
+
+        if (editor == null) {
+            return "";
+        }
+
+        SelectionModel selectionModel = editor.getSelectionModel();
+
+        String selectedText = selectionModel.getSelectedText();
+
+        if (selectedText != null && !selectedText.isEmpty()) {
+            return selectedText;
+        } else {
+            return "";
         }
     }
 }
