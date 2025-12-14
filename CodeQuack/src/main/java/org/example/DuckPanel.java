@@ -98,15 +98,23 @@ public class DuckPanel extends JPanel {
             chatPanel.revalidate();
             scrollToBottom();
 
-            // Call service in background thread
-            new Thread(() -> {
-                String response = duckService.askTheDuck(userText);
+            duckService.askTheDuck("", userText)
+                    .thenAccept(response -> {
+                        SwingUtilities.invokeLater(() -> {
+                            chatPanel.remove(typingIndicator);
+                            addMessage(response, false);
 
-                SwingUtilities.invokeLater(() -> {
-                    chatPanel.remove(typingIndicator);
-                    addMessage(response, false);
-                });
-            }).start();
+                            chatPanel.revalidate();
+                            chatPanel.repaint();
+                        });
+                    })
+                    .exceptionally(ex -> {
+                        SwingUtilities.invokeLater(() -> {
+                            chatPanel.remove(typingIndicator);
+                            addMessage("Communication error: " + ex.getMessage(), false);
+                        });
+                        return null;
+                    });
         });
     }
 
