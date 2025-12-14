@@ -22,12 +22,6 @@ import org.example.util.SoundManager;
 
 public class DuckPanel extends JPanel {
     private Project project;
-
-    private JPanel chatPanel;
-    private JScrollPane scrollPane;
-    private JTextField inputField;
-    private DuckService duckService;
-    private Icon duckIcon;
     private Icon userIcon;
     private JTextArea textArea;
     private final JPanel chatPanel;
@@ -118,22 +112,19 @@ public class DuckPanel extends JPanel {
         sendButton.setBorder(JBUI.Borders.empty(4));
         sendButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        sendButton.addActionListener(e -> sendMessage());
+        sendButton.addActionListener(e -> sendMessage(getSelectedCodeFromEditor(), inputField.getText().trim()));
         inputContainer.add(sendButton, BorderLayout.EAST);
 
         add(inputContainer, BorderLayout.SOUTH);
 
-        inputField.addActionListener(e -> sendMessage());
+        inputField.addActionListener(e -> sendMessage(getSelectedCodeFromEditor(), inputField.getText().trim()));
     }
 
-    private void sendMessage() {
-        String userText = inputField.getText();
-        if (userText.trim().isEmpty()) return;
+    private void sendMessage(String code, String userText) {
 
         addMessage(userText, true);
         inputField.setText("");
-        addMessage(userText, true);
-        inputField.setText("");
+
         sizeManager.updateSize();
 
         JPanel typingIndicator = createTypingIndicator();
