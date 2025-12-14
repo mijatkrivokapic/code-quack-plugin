@@ -67,7 +67,7 @@ public class DuckPanel extends JPanel {
                 JBUI.Borders.empty(8, 10)
         ));
 
-        inputField = new ExpandableTextArea("Type here...", 12, 12, 1);
+        inputField = new ExpandableTextArea("Type here...", 1);
         inputField.setLineWrap(true);
         inputField.setWrapStyleWord(true);
         inputField.setBorder(null);

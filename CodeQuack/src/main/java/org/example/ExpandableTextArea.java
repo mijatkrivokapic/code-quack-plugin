@@ -23,7 +23,7 @@ public class ExpandableTextArea extends JBTextArea {
     public static final String SUBMIT = "submit";
     public static final String NEWLINE = "newline";
 
-    public ExpandableTextArea(String placeholder, int leftPadding, int topPadding, int minRows) {
+    public ExpandableTextArea(String placeholder,int minRows) {
         super(minRows, 0);
         this.placeholder = placeholder;
         this.minRows = minRows;
