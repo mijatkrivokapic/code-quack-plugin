@@ -20,7 +20,7 @@ public class ChatController {
 
     @PostMapping(value ="/messages", produces = "application/json")
     public ResponseEntity<MessageResponseDTO> startSession(@RequestBody CreateMessageDTO questionDTO) {
-        String response = questionService.askQuestion(questionDTO.getCodeContext(), questionDTO.getUserProblem());
+        String response = questionService.askQuestion(questionDTO);
         return ResponseEntity.ok(new MessageResponseDTO(response));
     }
 

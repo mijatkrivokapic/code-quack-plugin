@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import com.example.backend.dto.CreateMessageDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -8,8 +9,7 @@ import com.example.backend.model.OpenAiRequest.Message;
 import com.example.backend.model.OpenAiResponse;
 
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,21 +32,24 @@ public class QuestionService {
         this.webClient = openAiWebClient;
     }
 
-    public String askQuestion(String codeContext, String userProblem) {
+    public String askQuestion(CreateMessageDTO messageDTO) {
+
+        List<Message> allMessages = new ArrayList<>();
+
+        allMessages.add(new Message("system", SYSTEM_PROMPT));
+
+        if (messageDTO.getHistory() != null && !messageDTO.getHistory().isEmpty()) {
+            allMessages.addAll(messageDTO.getHistory());
+        }
 
         String userContent = String.format("Code Snippet:\n```java\n%s\n```\n\nMy Problem: %s",
-                codeContext, userProblem);
+                messageDTO.getCodeContext(), messageDTO.getUserProblem());
 
-        // 1. KREIRANJE PORUKA BEZ BUILDERA (Korišćenje konstruktora)
-        Message systemMessage = new Message("system", SYSTEM_PROMPT);
         Message userMessage = new Message("user", userContent);
 
-        List<Message> messages = Arrays.asList(systemMessage, userMessage);
 
-        // 2. KREIRANJE ZAHTEVA BEZ BUILDERA (Korišćenje konstruktora)
-        OpenAiRequest request = new OpenAiRequest(MODEL, messages);
+        OpenAiRequest request = new OpenAiRequest(MODEL, allMessages);
 
-        // 3. Slanje zahteva i prijem odgovora (kao i pre)
         OpenAiResponse response = webClient.post()
                 .uri(COMPLETIONS_URI)
                 .bodyValue(request)
