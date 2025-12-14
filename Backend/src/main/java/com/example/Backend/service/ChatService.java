@@ -11,11 +11,10 @@ import com.example.backend.model.OpenAiResponse;
 
 import java.util.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Service
-public class QuestionService {
+public class ChatService {
     private static final String OPENAI_URL = "https://api.openai.com/v1/chat/completions";
     private static final String MODEL = "gpt-4o-mini";
     private static final String COMPLETIONS_URI = "/chat/completions";
@@ -25,10 +24,10 @@ public class QuestionService {
     private static final String SYSTEM_PROMPT = """
         You are an expert software engineer acting as a 'Rubber Duck'.
         Your Goal is to help the user debug their code by guiding them to the solution themselves.
-        DO NOT provide the solution or fixed code. Only ask one or two probing questions per response.
+        DO NOT provide the solution or fixed code. Only ask one or two probing questions per response that will lead the user to find the solution on their own.
         """;
 
-    public QuestionService(WebClient openAiWebClient) {
+    public ChatService(WebClient openAiWebClient) {
         this.webClient = openAiWebClient;
     }
 
